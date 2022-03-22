@@ -1,9 +1,3 @@
-"""
-Author:
-    Weichen Shen,weichenswc@163.com
-"""
-from __future__ import print_function
-
 import time
 import numpy as np
 import torch
@@ -24,6 +18,7 @@ class Linear(nn.Module):
         self.device = device
         self.sparse_feature_columns = list(
             filter(lambda x: isinstance(x, SparseFeat), feature_columns)) if len(feature_columns) else []
+
         self.dense_feature_columns = list(
             filter(lambda x: isinstance(x, DenseFeat), feature_columns)) if len(feature_columns) else []
 
@@ -33,11 +28,6 @@ class Linear(nn.Module):
         self.embedding_dict = create_embedding_matrix(feature_columns, init_std, linear=True, sparse=False,
                                                       device=device)
 
-        #         nn.ModuleDict(
-        #             {feat.embedding_name: nn.Embedding(feat.dimension, 1, sparse=True) for feat in
-        #              self.sparse_feature_columns}
-        #         )
-        # .to("cuda:1")
         for tensor in self.embedding_dict.values():
             nn.init.normal_(tensor.weight, mean=0, std=init_std)
 
@@ -66,7 +56,6 @@ class Linear(nn.Module):
         if len(sparse_embedding_list) > 0:
             sparse_embedding_cat = torch.cat(sparse_embedding_list, dim=-1)
             if sparse_feat_refine_weight is not None:
-                # w_{x,i}=m_{x,i} * w_i (in IFM and DIFM)
                 sparse_embedding_cat = sparse_embedding_cat * sparse_feat_refine_weight.unsqueeze(1)
             sparse_feat_logit = torch.sum(sparse_embedding_cat, dim=-1, keepdim=False)
             linear_logit += sparse_feat_logit
@@ -100,10 +89,6 @@ class BaseModel(nn.Module):
         self.dnn_feature_columns = dnn_feature_columns
 
         self.embedding_dict = create_embedding_matrix(dnn_feature_columns, init_std, sparse=False, device=device)
-        #         nn.ModuleDict(
-        #             {feat.embedding_name: nn.Embedding(feat.dimension, embedding_size, sparse=True) for feat in
-        #              self.dnn_feature_columns}
-        #         )
 
         self.linear_model = Linear(
             linear_feature_columns, self.feature_index, device=device)
@@ -116,11 +101,8 @@ class BaseModel(nn.Module):
         self.out = PredictionLayer(task, )
         self.to(device)
 
-        # parameters for callbacks
         self._is_graph_network = True  # used for ModelCheckpoint in tf2
         self._ckpt_saved_epoch = False  # used for EarlyStopping in tf1.14
-        # self.history = History()
-
 
     def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, initial_epoch=0, validation_split=0.,
             validation_data=None, shuffle=True, callbacks=None):
@@ -202,21 +184,10 @@ class BaseModel(nn.Module):
         sample_num = len(train_tensor_data)
         steps_per_epoch = (sample_num - 1) // batch_size + 1
 
-        # configure callbacks
-        # callbacks = (callbacks or []) + [self.history]  # add history callback
-        # callbacks = CallbackList(callbacks)
-        # callbacks.set_model(self)
-        # callbacks.on_train_begin()
-        # callbacks.set_model(self)
-        # if not hasattr(callbacks, 'model'):  # for tf1.4
-        #     callbacks.__setattr__('model', self)
-        # callbacks.model.stop_training = False
-
         # Train
         print("Train on {0} samples, validate on {1} samples, {2} steps per epoch".format(
             len(train_tensor_data), len(val_y), steps_per_epoch))
         for epoch in range(initial_epoch, epochs):
-            # callbacks.on_epoch_begin(epoch)
             epoch_logs = {}
             start_time = time.time()
             loss_epoch = 0
@@ -247,12 +218,9 @@ class BaseModel(nn.Module):
                                     train_result[name] = []
                                 train_result[name].append(metric_fun(
                                     y.cpu().data.numpy(), y_pred.cpu().data.numpy().astype("float64")))
-
-
-            except KeyboardInterrupt:
+                                    
+            finally:
                 t.close()
-                raise
-            t.close()
 
             # Add epoch_logs
             epoch_logs["loss"] = total_loss_epoch / sample_num
@@ -280,13 +248,6 @@ class BaseModel(nn.Module):
                         eval_str += " - " + "val_" + name + \
                                     ": {0: .4f}".format(epoch_logs["val_" + name])
                 print(eval_str)
-            # callbacks.on_epoch_end(epoch, epoch_logs)
-            # if self.stop_training:
-            #     break
-
-        # callbacks.on_train_end()
-
-        # return self.history
 
 
     def evaluate(self, x, y, batch_size=256):
@@ -301,6 +262,7 @@ class BaseModel(nn.Module):
         for name, metric_fun in self.metrics.items():
             eval_result[name] = metric_fun(y, pred_ans)
         return eval_result
+
 
     def predict(self, x, batch_size=256):
         """
@@ -330,6 +292,7 @@ class BaseModel(nn.Module):
 
         return np.concatenate(pred_ans).astype("float64")
 
+
     def input_from_feature_columns(self, X, feature_columns, embedding_dict, support_dense=True):
 
         sparse_feature_columns = list(
@@ -357,6 +320,7 @@ class BaseModel(nn.Module):
                             dense_feature_columns]
 
         return sparse_embedding_list + varlen_sparse_embedding_list, dense_value_list
+
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True, feature_group=False):
         sparse_feature_columns = list(
@@ -495,3 +459,5 @@ class BaseModel(nn.Module):
         if len(embedding_size_set) > 1:
             raise ValueError("embedding_dim of SparseFeat and VarlenSparseFeat must be same in this model!")
         return list(embedding_size_set)[0]
+
+

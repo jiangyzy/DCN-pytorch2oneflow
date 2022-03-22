@@ -1,9 +1,8 @@
-import itertools
-
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
+
 
 class Dice(nn.Module):
     """The Data Adaptive Activation Function in DIN,which can be viewed as a generalization of PReLu and can adaptively adjust the rectified point according to distribution of input data.
@@ -141,6 +140,7 @@ class DNN(nn.Module):
             fc = self.dropout(fc)
             deep_input = fc
         return deep_input
+
 
 class CrossNet(nn.Module):
     """The Cross Network part of Deep&Cross Network model,
@@ -339,3 +339,6 @@ class PredictionLayer(nn.Module):
         if self.task == "binary":
             output = torch.sigmoid(output)
         return output
+
+
+        

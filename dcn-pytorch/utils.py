@@ -1,6 +1,4 @@
-from collections import OrderedDict, namedtuple, defaultdict
-
-
+from collections import OrderedDict, namedtuple
 import torch
 import torch.nn as nn
 from layers import SequencePoolingLayer
@@ -27,7 +25,7 @@ class SparseFeat(namedtuple('SparseFeat',
                                               embedding_name, group_name)
 
     def __hash__(self):
-        return self.name.__hash__()
+        return hash(self.name)
 
 
 class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
@@ -66,7 +64,7 @@ class VarLenSparseFeat(namedtuple('VarLenSparseFeat',
         return self.sparsefeat.group_name
 
     def __hash__(self):
-        return self.name.__hash__()
+        return hash(self.name)
 
 class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
     __slots__ = ()
@@ -75,7 +73,7 @@ class DenseFeat(namedtuple('DenseFeat', ['name', 'dimension', 'dtype'])):
         return super(DenseFeat, cls).__new__(cls, name, dimension, dtype)
 
     def __hash__(self):
-        return self.name.__hash__()
+        return hash(self.name)
 
 
 def get_feature_names(feature_columns):
@@ -164,9 +162,6 @@ def create_embedding_matrix(feature_columns, init_std=0.0001, linear=False, spar
          sparse_feature_columns + varlen_sparse_feature_columns}
     )
 
-    # for feat in varlen_sparse_feature_columns:
-    #     embedding_dict[feat.embedding_name] = nn.EmbeddingBag(
-    #         feat.dimension, embedding_size, sparse=sparse, mode=feat.combiner)
 
     for tensor in embedding_dict.values():
         nn.init.normal_(tensor.weight, mean=0, std=init_std)
@@ -179,8 +174,6 @@ def varlen_embedding_lookup(X, embedding_dict, sequence_input_dict, varlen_spars
         feature_name = fc.name
         embedding_name = fc.embedding_name
         if fc.use_hash:
-            # lookup_idx = Hash(fc.vocabulary_size, mask_zero=True)(sequence_input_dict[feature_name])
-            # TODO: add hash function
             lookup_idx = sequence_input_dict[feature_name]
         else:
             lookup_idx = sequence_input_dict[feature_name]
@@ -209,3 +202,6 @@ def compute_input_dim(feature_columns, include_sparse=True, include_dense=True, 
     if include_dense:
         input_dim += dense_input_dim
     return input_dim
+
+
+    

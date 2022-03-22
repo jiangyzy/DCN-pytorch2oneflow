@@ -1,7 +1,5 @@
-
 import torch
 import torch.nn as nn
-
 from sklearn.metrics import *
 
 from layers import *
@@ -85,7 +83,7 @@ class DCN(BaseModel):
             cross_out = self.crossnet(dnn_input)
             logit += self.dnn_linear(cross_out)
         else:  # Error
-            pass
+            raise Exception('Model must be Deep & Cross, Only Deep or Only Cross.')
         y_pred = self.out(logit)
         return y_pred
 

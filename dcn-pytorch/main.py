@@ -7,22 +7,21 @@ from utils import SparseFeat, DenseFeat, get_feature_names
 from model import DCN
 
 
+def labelencoder():
+    for feat in sparse_features:
+        lbe = LabelEncoder()
+        data[feat] = lbe.fit_transform(data[feat])
+    mms = MinMaxScaler(feature_range=(0, 1))
+    data[dense_features] = mms.fit_transform(data[dense_features]) 
 
-def train():
-
-
-
-
-    return 
-
-def test():
-
-    return
-
+def featurescount():
+    sparse_feats = [SparseFeat(feat, data[feat].nunique()) for feat in sparse_features]
+    dense_feats = [DenseFeat(feat, 1, ) for feat in dense_features]
+    fixlen_feature_columns = sparse_feats + dense_feats
+    return fixlen_feature_columns
 
 if __name__ == "__main__":
 
-    print('hello')
     data = pd.read_csv('./criteo_sample.txt')
 
     sparse_features = ['C' + str(i) for i in range(1, 27)]
@@ -32,43 +31,27 @@ if __name__ == "__main__":
     data[dense_features] = data[dense_features].fillna(0, )
     target = ['label']
 
-
 # 1.Label Encoding for sparse features,and do simple Transformation for dense features
-    for feat in sparse_features:
-        lbe = LabelEncoder()
-        data[feat] = lbe.fit_transform(data[feat])
-    mms = MinMaxScaler(feature_range=(0, 1))
-    data[dense_features] = mms.fit_transform(data[dense_features])
+    labelencoder()
 
 # 2.count #unique features for each sparse field,and record dense feature field name
-
-    fixlen_feature_columns = [SparseFeat(feat, data[feat].nunique())
-                              for feat in sparse_features] + [DenseFeat(feat, 1, )
-                                                              for feat in dense_features]
+    fixlen_feature_columns = featurescount()
 
     dnn_feature_columns = fixlen_feature_columns
     linear_feature_columns = fixlen_feature_columns
-
+    
     feature_names = get_feature_names(
         linear_feature_columns + dnn_feature_columns)
 
-
 # 3.generate input data for model
-
     train, test = train_test_split(data, test_size=0.2)
 
     train_model_input = {name: train[name] for name in feature_names}
     test_model_input = {name: test[name] for name in feature_names}
 
-
 # 4.Define Model,train,predict and evaluate
 
-    device = 'cpu'
-    use_cuda = True
-    if use_cuda and torch.cuda.is_available():
-        print('cuda ready...')
-        device = 'cuda:0'
-
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     model = DCN(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                    task='binary',
@@ -82,3 +65,5 @@ if __name__ == "__main__":
     print("")
     print("test LogLoss", round(log_loss(test[target].values, pred_ans), 4))
     print("test AUC", round(roc_auc_score(test[target].values, pred_ans), 4))
+
+

@@ -72,11 +72,7 @@ class BaseModel(nn.Module):
 
         super(BaseModel, self).__init__()
 
-        ### 
-        # yzy modified: commented 
-
         # torch.manual_seed(seed)
-        ###
 
         self.dnn_feature_columns = dnn_feature_columns
 
@@ -178,11 +174,7 @@ class BaseModel(nn.Module):
         if self.gpus:
             print('parallel running on these gpus:', self.gpus)
 
-            ###
-            # yzy modified: commented
-
             # model = torch.nn.DataParallel(model, device_ids=self.gpus) 
-            ### 
 
             batch_size *= len(self.gpus)  # input `batch_size` is batch_size per gpu
         else:
@@ -213,12 +205,7 @@ class BaseModel(nn.Module):
 
                         optim.zero_grad()
 
-                        ### 
-                        # yzy modified: replaced
-
-                        # loss = loss_func(y_pred, y.squeeze(), reduction='sum')
                         loss = loss_func(y_pred, y.squeeze())
-                        ###
 
                         reg_loss = self.get_regularization_loss()
 
@@ -422,23 +409,6 @@ class BaseModel(nn.Module):
         return optim
 
     def _get_loss_func(self, loss):
-
-        ### 
-        # yzy modified: replaced
-
-        # if isinstance(loss, str):
-        #     if loss == "binary_crossentropy":
-        #         loss_func = F.binary_cross_entropy
-        #     elif loss == "mse":
-        #         loss_func = F.mse_loss
-        #     elif loss == "mae":
-        #         loss_func = F.l1_loss
-        #     else:
-        #         raise NotImplementedError
-        # else:
-        #     loss_func = loss
-        # return loss_func
-
         if isinstance(loss, str):
             if loss == "binary_crossentropy":
                 loss_func = nn.BCELoss(reduction="sum")
@@ -451,9 +421,6 @@ class BaseModel(nn.Module):
         else:
             loss_func = loss
         return loss_func
-
-        ###
-
 
 
     def _log_loss(self, y_true, y_pred, eps=1e-7, normalize=True, sample_weight=None, labels=None):

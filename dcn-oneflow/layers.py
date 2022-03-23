@@ -188,14 +188,8 @@ class CrossNet(nn.Module):
         x_l = x_0
         for i in range(self.layer_num):
             if self.parameterization == 'vector':
-
-                ### 
-                # yzy modify: replaced with new tensordot 
-
                 #xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
-
                 xl_w = tensordot(x_l,self.kernels[i])
-                ###
 
                 dot_ = flow.matmul(x_0, xl_w)
                 x_l = dot_ + self.bias[i] + x_l
@@ -208,9 +202,6 @@ class CrossNet(nn.Module):
         x_l = flow.squeeze(x_l, dim=2)
         return x_l
 
-### 
-# yzy modify: add new fun: tensordot
-
 def tensordot(x_l, kernel):
     t = []
     for i in range(x_l.shape[0]):
@@ -218,7 +209,7 @@ def tensordot(x_l, kernel):
         t.append(ele)
     res = flow.cat(t).reshape(x_l.shape[0],1,1)
     return res
-###
+
 
 class SequencePoolingLayer(nn.Module):
     """The SequencePoolingLayer is used to apply pooling operation(sum,mean,max) on variable-length sequence feature/multi-value feature.
@@ -268,9 +259,6 @@ class SequencePoolingLayer(nn.Module):
 
         embedding_size = uiseq_embed_list.shape[-1]
 
-        ###
-        # yzy modify: replaced
-
         # mask = torch.repeat_interleave(mask, embedding_size, dim=2)  # [B, maxlen, E]
 
         repeat_list = [1]*len(mask.shape)
@@ -280,8 +268,6 @@ class SequencePoolingLayer(nn.Module):
             repeat_list[2]=embedding_size
 
         mask = mask.repeat(repeat_list) # repeat_list: [1, 1, embedding_size]
-
-        ###
 
         if self.mode == 'max':
             hist = uiseq_embed_list - (1 - mask) * 1e9

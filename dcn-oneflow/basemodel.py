@@ -443,9 +443,9 @@ class BaseModel(nn.Module):
             if loss == "binary_crossentropy":
                 loss_func = nn.BCELoss(reduction="sum")
             elif loss == "mse":
-                loss_func = nn.MSELoss
-            # elif loss == "mae":
-            #     loss_func = F.l1_loss
+                loss_func = nn.MSELoss(reduction="sum")
+            elif loss == "mae":
+                loss_func = nn.L1Loss(reduction="sum")
             else:
                 raise NotImplementedError
         else:

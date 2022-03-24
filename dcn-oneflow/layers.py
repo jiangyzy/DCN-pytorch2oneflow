@@ -188,9 +188,7 @@ class CrossNet(nn.Module):
         x_l = x_0
         for i in range(self.layer_num):
             if self.parameterization == 'vector':
-                #xl_w = torch.tensordot(x_l, self.kernels[i], dims=([1], [0]))
-                xl_w = tensordot(x_l,self.kernels[i])
-
+                xl_w = flow.einsum('abc,bd->acd', x_l, self.kernels[i])
                 dot_ = flow.matmul(x_0, xl_w)
                 x_l = dot_ + self.bias[i] + x_l
             elif self.parameterization == 'matrix':
@@ -201,14 +199,6 @@ class CrossNet(nn.Module):
                 raise ValueError("parameterization should be 'vector' or 'matrix'")
         x_l = flow.squeeze(x_l, dim=2)
         return x_l
-
-def tensordot(x_l, kernel):
-    t = []
-    for i in range(x_l.shape[0]):
-        ele = flow.dot(x_l[i].reshape(-1), kernel.reshape(-1)).reshape(1,1)
-        t.append(ele)
-    res = flow.cat(t).reshape(x_l.shape[0],1,1)
-    return res
 
 
 class SequencePoolingLayer(nn.Module):
